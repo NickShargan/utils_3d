@@ -1,9 +1,12 @@
 import numpy as np
 import vtk
 
-from utils_3d import build_cone, build_sphere, mesh2actor, save_mesh, scale_mesh,\
-                     is_intersected, plane2actor, cut_polydata,\
-                     cut2actors, merge_polydata
+from utils_3d import build_cone, build_sphere, scale_mesh, cut_polydata,\
+                     is_intersected
+
+from utils_vtk import mesh2actor, plane2actor, cut2actors, merge_polydata
+
+from io_mesh import write_mesh
 
 
 def main():
@@ -26,8 +29,8 @@ def main():
     renderer.AddActor(actor)
 
     # Save to OBJ
-    save_mesh(mesh_sphere, "sphere.obj")
-    save_mesh(mesh_cone, "cone.obj")
+    write_mesh(mesh_sphere, "sphere.obj")
+    write_mesh(mesh_cone, "cone.obj")
 
     # scale cone x2 times
     mesh_cone_x2 = scale_mesh(mesh_cone, 2.0)
@@ -53,7 +56,7 @@ def main():
 
     d = 0.5
     plane_params[-1] = d
-    
+
     origin = (d / np.dot(normal, normal)) * normal
     plane.SetOrigin(origin)
     plane.SetNormal(normal)

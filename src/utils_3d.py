@@ -92,68 +92,6 @@ def scale_mesh(mesh: vtk.vtkPolyData, scale: float, center: tuple[float, float, 
     return out
 
 
-def mesh2actor(mesh: vtk.vtkPolyData) -> vtk.vtkActor:
-    """
-    Wrap a vtkPolyData mesh into an actor for rendering.
-    """
-    # Compute normals (optional)
-    normals = vtk.vtkPolyDataNormals()
-    normals.SetInputData(mesh)
-    normals.AutoOrientNormalsOn()
-    normals.ConsistencyOn()
-    normals.Update()
-
-    mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputConnection(normals.GetOutputPort())
-
-    actor = vtk.vtkActor()
-    actor.SetMapper(mapper)
-
-    return actor
-
-
-def save_mesh(mesh: vtk.vtkPolyData, filepath: str) -> None:
-    """
-    Save vtkPolyData to .obj / .stl / .ply based on file extension.
-    Ensures triangles + normals for good viewer compatibility.
-    """
-    ext = os.path.splitext(filepath)[1].lower()
-    if ext not in {".obj", ".stl", ".ply"}:
-        raise ValueError("Unsupported extension. Use .obj, .stl, or .ply")
-
-    # Triangulate
-    tri = vtk.vtkTriangleFilter()
-    tri.SetInputData(mesh)
-    tri.Update()
-
-    # Compute normals for smooth shading
-    norms = vtk.vtkPolyDataNormals()
-    norms.SetInputConnection(tri.GetOutputPort())
-    norms.SplittingOff()
-    norms.AutoOrientNormalsOn()
-    norms.ConsistencyOn()
-    norms.Update()
-
-    if ext == ".obj":
-        writer = vtk.vtkOBJWriter()
-        writer.SetFileName(filepath)
-        writer.SetInputData(norms.GetOutput())
-        writer.Update()
-        writer.Write()
-    elif ext == ".stl":
-        writer = vtk.vtkSTLWriter()
-        writer.SetFileName(filepath)
-        writer.SetInputData(norms.GetOutput())
-        writer.SetFileTypeToBinary()
-        writer.Write()
-    else:  # .ply
-        writer = vtk.vtkPLYWriter()
-        writer.SetFileName(filepath)
-        writer.SetInputData(norms.GetOutput())
-        writer.SetFileTypeToBinary()
-        writer.Write()
-
-
 def is_identical(mesh_1: vtk.vtkPolyData, mesh_2: vtk.vtkPolyData) -> bool:
     """Evaluate whether mesh_1 and mesh_2 are identical. Assuming that rotating and translating don't impact the result."""
 
@@ -256,26 +194,6 @@ def is_intersected(mesh: vtk.vtkPolyData, plane_params) -> bool:
     return (outp.GetNumberOfPoints() > 0) or (outp.GetNumberOfCells() > 0)
 
 
-def plane2actor(origin, normal, color=(1, 0, 0), opacity=0.4):
-    """
-    Create a visual rectangular patch representing the plane.
-    """
-    # Create plane geometry (finite rectangle in 3D)
-    plane_source = vtk.vtkPlaneSource()
-    plane_source.SetCenter(*origin)
-    plane_source.SetNormal(*normal)
-
-    mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputConnection(plane_source.GetOutputPort())
-
-    actor = vtk.vtkActor()
-    actor.SetMapper(mapper)
-    actor.GetProperty().SetColor(*color)
-    actor.GetProperty().SetOpacity(opacity)
-
-    return actor
-
-
 def cut_polydata(poly: vtk.vtkPolyData, plane_params) -> vtk.vtkPolyData:
     """Return polylines where plane intersects poly (may be multiple loops)."""
     plane = params2plane(plane_params)
@@ -292,70 +210,3 @@ def cut_polydata(poly: vtk.vtkPolyData, plane_params) -> vtk.vtkPolyData:
     stripper.Update()
 
     return stripper.GetOutput()
-
-
-def cut2actors(cut_poly: vtk.vtkPolyData,
-               as_tube=True,
-               line_width=3.0,
-               tube_radius=0.01,
-               base_color=(1, 1, 0)):
-    """
-    Return one actor per connected polyline (loop/segment) in the cut result.
-    """
-    actors = []
-
-    # Split the polyline set into connected regions
-    conn = vtk.vtkPolyDataConnectivityFilter()
-    conn.SetInputData(cut_poly)
-    conn.SetExtractionModeToAllRegions()
-    conn.ColorRegionsOn()
-    conn.Update()
-
-    n_regions = conn.GetNumberOfExtractedRegions()
-    for r in range(n_regions):
-        # Extract just region r as PolyData
-        reg = vtk.vtkPolyDataConnectivityFilter()
-        reg.SetInputData(cut_poly)
-        reg.SetExtractionModeToSpecifiedRegions()
-        reg.AddSpecifiedRegion(r)
-        reg.Update()
-
-        # Mapper chain
-        if as_tube:
-            tube = vtk.vtkTubeFilter()
-            tube.SetInputConnection(reg.GetOutputPort())
-            tube.SetRadius(tube_radius)
-            tube.SetNumberOfSides(16)
-            tube.CappingOn()
-            tube.Update()
-            mapper = vtk.vtkPolyDataMapper()
-            mapper.SetInputConnection(tube.GetOutputPort())
-        else:
-            mapper = vtk.vtkPolyDataMapper()
-            mapper.SetInputConnection(reg.GetOutputPort())
-
-        actor = vtk.vtkActor()
-        actor.SetMapper(mapper)
-        
-        actor.GetProperty().SetColor(*base_color)
-        if not as_tube:
-            actor.GetProperty().SetLineWidth(line_width)
-
-        actors.append(actor)
-
-    return actors
-
-
-
-
-def merge_polydata(poly1: vtk.vtkPolyData, poly2: vtk.vtkPolyData) -> vtk.vtkPolyData:
-    appender = vtk.vtkAppendPolyData()
-    appender.AddInputData(poly1)
-    appender.AddInputData(poly2)
-    appender.Update()
-
-    cleaner = vtk.vtkCleanPolyData()
-    cleaner.SetInputConnection(appender.GetOutputPort())
-    cleaner.Update()
-
-    return cleaner.GetOutput()

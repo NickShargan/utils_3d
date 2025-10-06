@@ -39,11 +39,13 @@ Cut: 64 points, 2 polylines
 
 ## Asymptotic complexity analysis
 
+O(N)
+
 ### true / false option
 
 For cases when all bounds (that are cached for vtk polydata) of mesh are located on the same side of plane, complexity is constant - O(1).
 
-Alternatively, each face (triangle) of the mesh should be checked for the same condition: all vertices are located on the same side of the plane. Considering that verifying this condition requires computing dot product (O(1)) for each vertex to define sign of the distance to plane, overall complexity in the worst case scenarion is O(N) where N is number of faces. 
+Alternatively, each face (triangle) of the mesh should be checked for the same condition: all vertices are located on the same side of the plane. Considering that verifying this condition requires computing dot product (O(1)) for each vertex to define sign of the distance to plane, overall complexity in the worst case scenarion is **O(N)** where N is number of faces. 
 
 ### defining polyline/perimeter of intersection
 
@@ -86,15 +88,14 @@ utils-3d is_intersect --mesh cone.obj --a 0.0 --b 0.0 --c 1.0 --d 1.5
 
 Let's assume that the given non-convex, non-symmetrical volume is defined by a 3d mesh.
 
-One of solutions (not likely the optimal one) would be applying an algorithm similar to Region Growth. 
-The seed (1st sphere) could be initialised randomly. For example, we can define bounds of the defined volume and randomly select coordinates until sphere will be fully inside the volume.
-Or seed can be initialised near one of the faces (in opposite direction from the normal) on distance <sphere_radius>.
+One of solutions would be applying an algorithm similar to Region Growth. 
+The seed (1st sphere) could be initialised randomly. For example, we can define bounds of the defined volume and randomly select coordinates until sphere will be fully inside the volume. Or seed can be initialised near one of the faces (in opposite direction from the normal) on distance <sphere_radius>.
 
 def is_sphere_inside(center_coords, radius=1) 
 
-Assumption.
-Let's assume that the volume doesn't have areas that are more narrow that the small sphere and all spheres will be packed into a single connected blob.
+Let's make another assumption that the volume doesn't have areas that are more narrow that the small sphere and all spheres will be packed into a single connected blob.
 
-So, basically, at the beginning we are going to initialise origin and direction, and then apply region growth. This process will be repeated with 2 parameters (1 point and 1 vector) with continuous values in some range: center, direction. Ranges of values for coordinates of center could be [-<sphere_radius>, +<sphere_radius>] with step <sphere_radius>/100 and directions in 2d squares with <sphere_radius>/100 size.
+So, basically, at the beginning we are going to initialise origin and direction, and then apply region growth. This process will be repeated with various values for origin and direction within some range. Ranges of values for coordinates of center could be [-<sphere_radius>, +<sphere_radius>] with step <sphere_radius>/100 for x/y/z and directions in 2d squares with <sphere_radius>/100 size.
+One of combinations with maximumal number of packed spheres will be selected as the optional one.
 
 Such logic could be well parellalised beyond 32 kernels that are common for CPUs. So, using language like Cuda could be benefitial for speed by utilising GPU computations.

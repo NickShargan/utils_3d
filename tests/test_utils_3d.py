@@ -7,9 +7,15 @@ import pytest
 from utils_3d import (
     build_sphere,
     build_cone,
-    save_mesh,
     scale_mesh,
+    is_intersected,
+    cut_polydata
 )
+
+from utils_vtk import merge_polydata
+
+from io_mesh import write_mesh
+
 
 def test_build_sphere_bounds():
     r = 1.25
@@ -50,11 +56,11 @@ def test_build_cone_bounds():
     assert max(abs(ymin), abs(ymax)) == pytest.approx(radius, rel=0.05, abs=1e-2)
 
 
-def test_save_mesh(tmp_path):
+def test_write_mesh(tmp_path):
     mesh = build_sphere(radius=0.4)
     out_path = tmp_path / "sphere.obj"
 
-    save_mesh(mesh, str(out_path))
+    write_mesh(mesh, str(out_path))
 
     assert out_path.exists()
     # File should be non-trivial size
@@ -91,9 +97,53 @@ def test_scale_mesh_sphere_extents_and_center():
     assert h2[1] == pytest.approx(h1[1] * s, rel=0.02)
     assert h2[2] == pytest.approx(h1[2] * s, rel=0.02)
 
+
 def test_scale_mesh_rejects_nonpositive():
     mesh = build_sphere(radius=1.0)
     with pytest.raises(ValueError):
         scale_mesh(mesh, 0.0)
     with pytest.raises(ValueError):
         scale_mesh(mesh, -1.0)
+
+
+def test_is_intersected_bool():
+    # prepare geometry with possible multiple intersections
+    mesh_cone_1 = build_cone(height=1.5, radius=0.5, center=(1.0, 0.0, 0.0))
+    mesh_cone_2 = build_cone(height=1.5, radius=0.5, center=(1.0, 0.5, 0.0))
+
+    mesh_cones = merge_polydata(mesh_cone_1, mesh_cone_2)
+
+    a, b, c, d = 0.0, 0.0, 1.0, 1.5
+    plane_params = [a, b, c, d]
+
+    res = is_intersected(mesh_cones, plane_params)
+    
+    # should not intersect
+    assert not res
+
+    a, b, c, d = 0.0, 0.0, 1.0, 0.5
+    plane_params = [a, b, c, d]
+
+    res = is_intersected(mesh_cones, plane_params)
+
+    assert res
+
+    
+def test_is_intersected_poly():
+    # prepare geometry with possible multiple intersections
+    mesh_cone_1 = build_cone(height=1.5, radius=0.5, center=(1.0, 0.0, 0.0))
+    mesh_cone_2 = build_cone(height=1.5, radius=0.5, center=(1.0, 0.5, 0.0))
+
+    mesh_cones = merge_polydata(mesh_cone_1, mesh_cone_2)
+
+    a, b, c, d = 0.0, 0.0, 1.0, 0.5
+    plane_params = [a, b, c, d]
+    
+    cut_poly = cut_polydata(mesh_cones, plane_params)
+    num_pts = cut_poly.GetNumberOfPoints()
+    num_cells = cut_poly.GetNumberOfCells()
+    print(f"Cut: {num_pts} points, {num_cells} polylines")
+
+    assert num_cells == 2
+
+    assert num_pts == 64
