@@ -62,6 +62,26 @@ Considering it takes constant time, the complexity for all vertices will rematin
 
 In terms of memory the same O(N) applies for both cases to store the input, since no additional data are kept during computations (like for dynamic programing).
 
+## CLI
+
+Use these function as CLI app:
+
+```
+pip install -e .
+
+utils-3d sphere --radius 1.0 --out sphere.obj  
+
+utils-3d cone --radius 1.0 --height 2.0 --out cone.obj 
+
+utils-3d scale --mesh sphere.obj --coef 1.5 --out sphere_scaled.obj
+
+# True & writes polylines to *.obj file
+utils-3d is_intersect --mesh cone.obj --a 0.0 --b 0.0 --c 1.0 --d 0.5 --out cut.obj
+
+# False
+utils-3d is_intersect --mesh cone.obj --a 0.0 --b 0.0 --c 1.0 --d 1.5
+```
+
 ## Optimisation problem (Task 2)
 
 Let's assume that the given non-convex, non-symmetrical volume is defined by a 3d mesh.

@@ -177,7 +177,7 @@ def _as_vtk_plane(plane):
 def params2plane(plane_params):
     """Build vtkPlane from a, b, c, d: ax + by + cz = d"""
     a, b, c, d = plane_params
-    print(plane_params, a, b, c, d)
+    print("a, b, c, d = ", plane_params)
 
     normal = np.array([a, b, c])
     origin = (d / np.dot(normal, normal)) * normal
@@ -241,13 +241,10 @@ def params2plane(plane_params):
 #     if cut_output.GetNumberOfPoints() > 0 or cut_output.GetNumberOfCells() > 0:
 #         return True
 
-#     # Edge cases are rare, but if cutter produced nothing after passing the bounds test,
-#     # treat as no intersection.
 #     return False
 
 
 def is_intersected(mesh: vtk.vtkPolyData, plane_params) -> bool:
-    
     plane = params2plane(plane_params)
 
     vp = _as_vtk_plane(plane)
