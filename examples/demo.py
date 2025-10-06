@@ -36,28 +36,29 @@ def main():
 
     # intersection with plane
 
-    a, b, c, d = 0.0, 0.0, 1.0, 0.5
+    a, b, c, d = 0.0, 0.0, 1.0, 1.5
+    plane_params = [a, b, c, d]
 
-    # origin = [-1.0, 1.5, 0.0]
-    origin = [1.0, 0.3, 0.5]
-    normal = [0.0, 0.0, 1.0]
-    # normal = [a, b, c]
-    # origin = (d / np.dot(normal, normal)) * normal
+    normal = np.array([a, b, c])
+    origin = (d / np.dot(normal, normal)) * normal
     plane = vtk.vtkPlane()
     plane.SetOrigin(origin)
     plane.SetNormal(normal)
 
     mesh_cones = merge_polydata(mesh_cone_trans, mesh_cone_2)
 
-    res = is_intersected(mesh_cones, plane)
+    res = is_intersected(mesh_cones, plane_params)
     print("is_intersected(mesh, plane) = ", res)
     print(f"plane origin: {origin}; normal: {normal}")
 
-    # origin = [-1.0, 0.5, 0.0]
+    d = 0.5
+    plane_params[-1] = d
+    
+    origin = (d / np.dot(normal, normal)) * normal
     plane.SetOrigin(origin)
     plane.SetNormal(normal)
 
-    res = is_intersected(mesh_cones, plane)
+    res = is_intersected(mesh_cones, plane_params)
     print("is_intersected(mesh, plane) = ", res)
     print(f"plane origin: {origin}; normal: {normal}")
     
@@ -65,7 +66,7 @@ def main():
     renderer.AddActor(actor_p)
 
     # polyline at intersection
-    cut_poly = cut_polydata(mesh_cones, origin, normal)
+    cut_poly = cut_polydata(mesh_cones, plane_params)
     num_pts = cut_poly.GetNumberOfPoints()
     num_cells = cut_poly.GetNumberOfCells()
     print(f"Cut: {num_pts} points, {num_cells} polylines")
