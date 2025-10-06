@@ -142,7 +142,7 @@ region_grow_hcp(mesh, r, orientation, origin, sdf, seed_node):
     return centers
 
 
-function optsearch_region_growth(mesh, r, K, M):
+optsearch_region_growth(mesh, r, K, M):
     # Precompute
     bbox = mesh.bounding_box()
     sdf  = try_build_sdf(mesh, voxel=r/3)  # None if not available
