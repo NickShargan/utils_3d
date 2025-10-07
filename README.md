@@ -105,7 +105,7 @@ The seed (1st sphere) could be initialised randomly. For example, we can define 
 Let's make another assumption that the volume doesn't have areas that are more narrow that the small sphere and all spheres will be packed into a single connected blob.
 
 So, basically, at the beginning we are going to initialise origin and direction, and then apply region growth. This process will be repeated with various values for origin and direction within some range. Ranges of values for coordinates of center could be [-<sphere_radius>, +<sphere_radius>] with step <sphere_radius>/100 for x/y/z and directions (e.g. 3 degree step in differen directions).
-One of combinations with maximal number of packed spheres will be selected as the optional one.
+One of combinations with maximal number of packed spheres will be selected as the optimal one.
 
 Such logic could be well parellalised beyond 32 kernels that are common for CPUs. So, using language like CUDA could be beneficial for speed by utilising GPU computations.
 
@@ -145,7 +145,7 @@ region_grow_hcp(mesh, r, orientation, origin, sdf, seed_node):
 optsearch_region_growth(mesh, r, K, M):
     # Precompute
     bbox = mesh.bounding_box()
-    sdf  = try_build_sdf(mesh, voxel=r/3)  # None if not available
+    sdf  = build_sdf(mesh, voxel=r/3)
 
     best = {centers: [], orientation: None, origin: None, score: -INF}
 
